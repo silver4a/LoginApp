@@ -20,7 +20,6 @@ import java.util.*
 class RegisterFragment : Fragment() {
 
     lateinit var authFirebase: AuthFirebase
-    lateinit var databaseFirebase: DatabaseFirebase
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -43,7 +42,6 @@ class RegisterFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         authFirebase = AuthFirebase.getInstance(context)
-        databaseFirebase = DatabaseFirebase.getInstance(context)
 
         //Register click
         btn_register.setOnClickListener(View.OnClickListener {

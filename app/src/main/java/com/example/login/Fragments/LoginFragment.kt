@@ -10,11 +10,13 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.login.Firebase.AuthFirebase
 import com.example.login.R
+import com.google.firebase.auth.FirebaseUser
 import kotlinx.android.synthetic.main.login_layout.*
 class LoginFragment : Fragment(),View.OnClickListener {
 
     lateinit var registerFragment: RegisterFragment
     lateinit var authFirebase: AuthFirebase
+    lateinit var onFragmentLoginResponse: OnFragmentLoginResponse
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?
@@ -25,8 +27,9 @@ class LoginFragment : Fragment(),View.OnClickListener {
     companion object {
         // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance() = LoginFragment().apply {
+        fun newInstance(onLoginResponse: OnFragmentLoginResponse) = LoginFragment().apply {
             arguments = Bundle().apply {
+                onFragmentLoginResponse = onLoginResponse
             }
         }
     }
@@ -40,6 +43,14 @@ class LoginFragment : Fragment(),View.OnClickListener {
         forgot_password.setOnClickListener(this)
         google_login.setOnClickListener(this)
         registerFragment = RegisterFragment.newInstance()
+
+        //Verifica si ya el usuario se encuentra logeado.
+        authFirebase.isSingUp(object : AuthFirebase.OnSignUpResponse{
+            override fun onSucess(user: FirebaseUser?) {
+                user?.let { onFragmentLoginResponse.onSucess(it) }
+            }
+
+        })
     }
 
     override fun onClick(v: View?) {
@@ -58,10 +69,15 @@ class LoginFragment : Fragment(),View.OnClickListener {
                 }else if(txt_password.isEmpty() || txt_password.length < 5){
                     Toast.makeText(context,"Verifique su contraseña",Toast.LENGTH_SHORT).show()
                 }else{
-                    authFirebase.singUp(
+                    authFirebase.signUp(
                         l_email.text.toString(),
                         l_password.text.toString(),
-                        true)
+                        true,object : AuthFirebase.OnSignUpResponse {
+                            override fun onSucess(user: FirebaseUser?) {
+                                user?.let { onFragmentLoginResponse.onSucess(it) }
+                            }
+
+                        })
                 }
             }
             R.id.forgot_password ->{
@@ -89,5 +105,9 @@ class LoginFragment : Fragment(),View.OnClickListener {
             .addToBackStack(fragment_back?.toString())
             .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
             .commit()
+    }
+
+    interface OnFragmentLoginResponse{
+        fun onSucess(firebaseUser: FirebaseUser)
     }
 }

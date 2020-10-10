@@ -62,7 +62,8 @@ public class AuthFirebase extends DatabaseFirebase{
                 });
     }
 
-    public void singUp(String email, String password, final boolean verification){
+    //Inicio de sesion.
+    public void signUp(String email, String password, final boolean verification, final OnSignUpResponse onSigUpResponse){
         final String TAG = "Login Firebase";
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener((Activity) context, new OnCompleteListener<AuthResult>() {
@@ -71,7 +72,7 @@ public class AuthFirebase extends DatabaseFirebase{
                         updateUserInfo();
                         if (task.isSuccessful()) {
                             if(verification && !user.isEmailVerified()){
-                                singOut();
+                                signOut();
                                 Toast.makeText(context, "Verifica tu cuenta", Toast.LENGTH_SHORT).show();
                             }
                             else {
@@ -79,6 +80,7 @@ public class AuthFirebase extends DatabaseFirebase{
                                 Toast.makeText(context, "Iniciaste sesion", Toast.LENGTH_SHORT).show();
                                 FirebaseUser user = mAuth.getCurrentUser();
                                 updateUI(user);
+                                onSigUpResponse.onSucess(user);
                             }
                         } else {
 
@@ -88,18 +90,35 @@ public class AuthFirebase extends DatabaseFirebase{
             @Override
             public void onFailure(@NonNull Exception e) {
                 Toast.makeText(context, "Verifica tus datos", Toast.LENGTH_SHORT).show();
+                //onSigUpResponse.onFail();
             }
         });
     }
 
-    public void singOut(){
+    //Interface fragments.
+    public interface OnSignUpResponse{
+        void onSucess(FirebaseUser user);
+        //void onFail();
+    }
+
+    //Comprueba si hay un usuario ya logeado
+    public void isSingUp(OnSignUpResponse onSigUpResponse){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            onSigUpResponse.onSucess(user);
+        }
+    }
+
+    //Cierra la sesion.
+    public void signOut(){
         mAuth.signOut();
     }
 
-    public Map<String,String> getUserInformation(){
-        updateUserInfo();
+    //Retorna un map de la informacion del usuario.
+    public Map<String,String> getUserInformation(FirebaseUser user){
+
+        Map<String,String> info = new HashMap<>();
         if (user != null) {
-            Map<String,String> info = new HashMap<>();
             info.put("name",user.getDisplayName());
             info.put("email",user.getEmail());
             info.put("urimg",user.getPhotoUrl().getPath());
@@ -107,7 +126,7 @@ public class AuthFirebase extends DatabaseFirebase{
             info.put("verification",String.valueOf(user.isEmailVerified()));
             return info;
         }
-        return null;
+        return info;
     }
 
     //Actualiza la instancia.
