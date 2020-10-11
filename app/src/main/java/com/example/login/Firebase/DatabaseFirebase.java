@@ -9,11 +9,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class DatabaseFirebase{
     public static DatabaseFirebase instance;
     private Context context;
+    private Map<String,ValueEventListener> mapValueEvents = new HashMap<String,ValueEventListener>();
     //Databse
     public static DatabaseReference databaseReference =
             FirebaseDatabase.getInstance().getReference();
@@ -34,9 +36,9 @@ public class DatabaseFirebase{
         databaseReference.child(child).setValue(value);
     }
 
-    public ValueEventListener read(final String child, final boolean stream, final DatabaseResponse databaseResponse){
+    public void read(final String child, final boolean stream, final DatabaseResponse databaseResponse){
 
-         ValueEventListener valueEventListener = new ValueEventListener() {
+         final ValueEventListener valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 databaseResponse.onResponse(snapshot);
@@ -49,10 +51,10 @@ public class DatabaseFirebase{
         };
         if(!stream)
             databaseReference.child(child).addListenerForSingleValueEvent(valueEventListener);
-        else
+        else {
             databaseReference.child(child).addValueEventListener(valueEventListener);
-
-        return null;
+            mapValueEvents.put(child, valueEventListener);
+        }
     }
 
     public void deleteStreamEvent(ValueEventListener valueEventListener){
@@ -64,4 +66,7 @@ public class DatabaseFirebase{
         void onFail(DatabaseError databaseError);
     }
 
+    public ValueEventListener getValueEventListener(String key){
+        return mapValueEvents.get(key);
+    }
 }

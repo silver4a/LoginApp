@@ -84,7 +84,7 @@
             android:textColorLink="#B7FFFFFF" />
 
         <EditText
-            android:id="@+id/r_identification"
+            android:id="@+id/r_usuario"
             android:layout_width="match_parent"
             android:layout_height="50dp"
             android:layout_marginLeft="20dp"
@@ -93,8 +93,8 @@
             android:autofillHints=""
             android:background="@drawable/custom_input"
             android:gravity="center"
-            android:hint="Identificación"
-            android:inputType="numberDecimal"
+            android:hint="Usuario"
+            android:inputType="text"
             android:textColor="#FFFFFF"
             android:textColorHighlight="#B0FFFFFF"
             android:textColorHint="#AEFFFFFF"

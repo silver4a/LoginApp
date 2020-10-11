@@ -1,4 +1,4 @@
-package com.example.login.Fragments
+package com.example.login.Fragments.LoginActivity
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -9,13 +9,8 @@ import android.widget.Toast
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
 import com.example.login.Firebase.AuthFirebase
-import com.example.login.Firebase.DatabaseFirebase
 import com.example.login.R
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import kotlinx.android.synthetic.main.login_layout.*
 import kotlinx.android.synthetic.main.register_layout.*
-import java.util.*
 
 class RegisterFragment : Fragment() {
 
@@ -45,22 +40,9 @@ class RegisterFragment : Fragment() {
 
         //Register click
         btn_register.setOnClickListener(View.OnClickListener {
-            /*
-            databaseFirebase.write("linux/rodo","jeje")
-            databaseFirebase.read("linux",false,object : DatabaseFirebase.DatabaseResponse{
-                override fun onFail(databaseError: DatabaseError?) {
-                    Toast.makeText(context,"error",Toast.LENGTH_SHORT).show()
-                }
-
-                override fun onResponse(dataSnapshot: DataSnapshot?) {
-                    Toast.makeText(context,"here",Toast.LENGTH_SHORT).show()
-                    Toast.makeText(context,dataSnapshot?.getValue().toString(),Toast.LENGTH_SHORT).show()
-                }
-            })
-            */
             val txt_name = r_names.text.toString()
             val txt_lastname = r_names.text.toString()
-            val txt_ide = r_identification.text.toString()
+            val txt_ide = r_usuario.text.toString()
             val txt_email = r_email.text.toString()
             val txt_password = r_password.text.toString()
             val txt_re_password = r_confirm_password.text.toString()
@@ -90,7 +72,7 @@ class RegisterFragment : Fragment() {
                         "names" to r_names.text.toString(),
                         "lastnames" to r_lastnames.text.toString(),
                         "email" to r_email.text.toString(),
-                        "CC" to r_identification.text.toString()
+                        "username" to r_usuario.text.toString()
                     )
                     authFirebase.register(
                         r_email.text.toString(),
@@ -101,16 +83,5 @@ class RegisterFragment : Fragment() {
                 }
             }
         })
-    }
-
-    //Methods
-    fun callFragment(fragment:Fragment,fragment_back:Fragment = fragment){
-        val fragmentManager: FragmentManager = activity!!.supportFragmentManager
-        fragmentManager
-            .beginTransaction()
-            .replace(R.id.frameLayout,fragment)
-            .addToBackStack(fragment_back.toString())
-            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .commit()
     }
 }

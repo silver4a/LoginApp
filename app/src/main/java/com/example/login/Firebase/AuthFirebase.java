@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
+import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -13,7 +14,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
-
+import com.squareup.picasso.Picasso;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,9 +22,9 @@ public class AuthFirebase extends DatabaseFirebase{
     //Singetlon
     private static AuthFirebase instance;
     //Params
-    private FirebaseAuth mAuth;
     private Context context;
-    private FirebaseUser user;
+    protected FirebaseAuth mAuth;
+    protected FirebaseUser user;
 
     public AuthFirebase(Context context){
         super(context);
@@ -46,17 +47,17 @@ public class AuthFirebase extends DatabaseFirebase{
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
-                            FirebaseUser user = mAuth.getCurrentUser();
+                            //FirebaseUser user = mAuth.getCurrentUser();
                             Toast.makeText(context, "Usuario creado con exito", Toast.LENGTH_SHORT).show();
                             write("Users/"+getUid(),mapUser);
                             updateUserBasic(mapUser.get("names").toString());
                             if(verification)
                                 sendEmailVerification();
-                            updateUI(user);
+                            //updateUI(user);
                         } else {
                             // If sign in fails, display a message to the user.
                             Toast.makeText(context, "Ha ocurrido un error, vuelva a intentarlo", Toast.LENGTH_SHORT).show();
-                            updateUI(null);
+                            //updateUI(null);
                         }
                     }
                 });
@@ -73,7 +74,7 @@ public class AuthFirebase extends DatabaseFirebase{
                         if (task.isSuccessful()) {
                             if(verification && !user.isEmailVerified()){
                                 signOut();
-                                Toast.makeText(context, "Verifica tu cuenta", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(context, "Verifica tu cuenta en tu correo electronico", Toast.LENGTH_SHORT).show();
                             }
                             else {
                                 // Sign in success, update UI with the signed-in user's information
@@ -255,6 +256,18 @@ public class AuthFirebase extends DatabaseFirebase{
     public String getEmail(){ updateUserInfo(); return user.getEmail();}
     public Uri getPhotoUrl(){ updateUserInfo(); return user.getPhotoUrl();}
     public String getUid(){ updateUserInfo(); return user.getUid();}
+    public FirebaseUser getUser(){
+        return FirebaseAuth.getInstance().getCurrentUser();
+    }
+    public void getImg(ImageView imageView){
+        try {
+            updateUserInfo();
+            String url = user.getPhotoUrl().toString();
+            //String url = "https://firebasestorage.googleapis.com/v0/b/pruebas-aa804.appspot.com/o/images%2FLana.jpg?alt=media&token=0df4f177-c5b0-4f1c-9ea6-f1895450a0be";
+            System.out.println("url: " + url);
+            Picasso.with(context).load(url).into(imageView);
+        }catch (Exception e){}
+    }
 
     //Response login.
     private void updateUI(FirebaseUser user) {
@@ -263,4 +276,5 @@ public class AuthFirebase extends DatabaseFirebase{
         System.out.println("url: "+getPhotoUrl());
         System.out.println("uid: "+getUid());
     }
+
 }

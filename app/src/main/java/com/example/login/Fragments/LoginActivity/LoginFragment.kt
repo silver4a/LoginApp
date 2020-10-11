@@ -1,4 +1,4 @@
-package com.example.login.Fragments
+package com.example.login.Fragments.LoginActivity
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -8,7 +8,10 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentTransaction
+import com.example.login.Activities.LoginActivity
+import com.example.login.Activities.MainActivity
 import com.example.login.Firebase.AuthFirebase
+import com.example.login.Firebase.AuthGoogle
 import com.example.login.R
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.android.synthetic.main.login_layout.*
@@ -25,11 +28,12 @@ class LoginFragment : Fragment(),View.OnClickListener {
     }
 
     companion object {
-        // TODO: Rename and change types and number of parameters
         @JvmStatic
-        fun newInstance(onLoginResponse: OnFragmentLoginResponse) = LoginFragment().apply {
+        fun newInstance(onLoginResponse: OnFragmentLoginResponse?) = LoginFragment().apply {
             arguments = Bundle().apply {
-                onFragmentLoginResponse = onLoginResponse
+                if (onLoginResponse != null) {
+                    onFragmentLoginResponse = onLoginResponse
+                }
             }
         }
     }
@@ -56,7 +60,7 @@ class LoginFragment : Fragment(),View.OnClickListener {
     override fun onClick(v: View?) {
         when (v?.id){
             R.id.register -> {
-                callFragment(registerFragment,null)
+                (getActivity() as LoginActivity?)?.callFragment(registerFragment,true)
             }
             R.id.btn_login ->{
                 val txt_email = l_email.text.toString();
@@ -92,20 +96,18 @@ class LoginFragment : Fragment(),View.OnClickListener {
                 }
             }
             R.id.google_login ->{
-
+                Toast.makeText(context,"Iniciando con google. . .",Toast.LENGTH_SHORT).show()
+                AuthGoogle.getInstance(context).signIn(object :AuthGoogle.SignInresponse{
+                    override fun onSucess(user: FirebaseUser?) {
+                        user?.let { onFragmentLoginResponse.onSucess(it) }
+                    }
+                })
             }
         }
     }
     //Methods
-    fun callFragment(fragment:Fragment, fragment_back: Fragment? = fragment){
-        val fragmentManager: FragmentManager = activity!!.supportFragmentManager
-        fragmentManager
-            .beginTransaction()
-            .replace(R.id.frameLayout,fragment)
-            .addToBackStack(fragment_back?.toString())
-            .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-            .commit()
-    }
+
+
 
     interface OnFragmentLoginResponse{
         fun onSucess(firebaseUser: FirebaseUser)
