@@ -101,6 +101,15 @@
             android:orientation="horizontal">
 
             <ImageButton
+                android:id="@+id/phone_login"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginRight="10dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:scaleType="centerCrop"
+                app:srcCompat="@drawable/ic_phone" />
+
+            <ImageButton
                 android:id="@+id/google_login"
                 android:layout_width="30dp"
                 android:layout_height="30dp"

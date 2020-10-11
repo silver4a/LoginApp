@@ -1,17 +1,29 @@
 package com.example.login.Firebase;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.Uri;
+import android.text.InputType;
 import android.util.Log;
+import android.view.ContextThemeWrapper;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
+
+import com.example.login.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseNetworkException;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.squareup.picasso.Picasso;
@@ -25,11 +37,13 @@ public class AuthFirebase extends DatabaseFirebase{
     private Context context;
     protected FirebaseAuth mAuth;
     protected FirebaseUser user;
+    ProgressDialog progressDialog;
 
     public AuthFirebase(Context context){
         super(context);
         this.context = context;
         mAuth = FirebaseAuth.getInstance();
+        progressDialog = new ProgressDialog(this.context);
     }
 
     public static synchronized AuthFirebase getInstance(Context context){
@@ -39,6 +53,7 @@ public class AuthFirebase extends DatabaseFirebase{
         return instance;
     }
 
+    //Register user.
     public void register(final String email, String password, final Map<String,Object> mapUser,final boolean verification){
         final String TAG = "Firebase register";
         mAuth.createUserWithEmailAndPassword(email, password)
@@ -48,24 +63,30 @@ public class AuthFirebase extends DatabaseFirebase{
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             //FirebaseUser user = mAuth.getCurrentUser();
-                            Toast.makeText(context, "Usuario creado con exito", Toast.LENGTH_SHORT).show();
-                            write("Users/"+getUid(),mapUser);
+                            write("Users/" + getUid(), mapUser);
                             updateUserBasic(mapUser.get("names").toString());
-                            if(verification)
+                            if (verification) {
                                 sendEmailVerification();
+                                signOut();
+                            }
+                            Toast.makeText(context,
+                                    "Usuario creado con éxito" +
+                                            (verification ? ", confirme su cuenta en su correo electrónico" : ""),
+                                    Toast.LENGTH_SHORT).show();
                             //updateUI(user);
-                        } else {
-                            // If sign in fails, display a message to the user.
-                            Toast.makeText(context, "Ha ocurrido un error, vuelva a intentarlo", Toast.LENGTH_SHORT).show();
-                            //updateUI(null);
                         }
                     }
-                });
+                }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                toastException(e);
+            }
+        });
     }
 
-    //Inicio de sesion.
+    //LogIn user.
     public void signUp(String email, String password, final boolean verification, final OnSignUpResponse onSigUpResponse){
-        final String TAG = "Login Firebase";
+        System.out.println("LOGIN!");
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener((Activity) context, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -78,19 +99,17 @@ public class AuthFirebase extends DatabaseFirebase{
                             }
                             else {
                                 // Sign in success, update UI with the signed-in user's information
-                                Toast.makeText(context, "Iniciaste sesion", Toast.LENGTH_SHORT).show();
                                 FirebaseUser user = mAuth.getCurrentUser();
                                 updateUI(user);
                                 onSigUpResponse.onSucess(user);
                             }
-                        } else {
-
                         }
                     }
                 }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Toast.makeText(context, "Verifica tus datos", Toast.LENGTH_SHORT).show();
+                toastException(e);
+                showProgressDialog(false);
                 //onSigUpResponse.onFail();
             }
         });
@@ -102,7 +121,7 @@ public class AuthFirebase extends DatabaseFirebase{
         //void onFail();
     }
 
-    //Comprueba si hay un usuario ya logeado
+    //Check if user is signUp -> response trough a interface.
     public void isSingUp(OnSignUpResponse onSigUpResponse){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
@@ -110,12 +129,12 @@ public class AuthFirebase extends DatabaseFirebase{
         }
     }
 
-    //Cierra la sesion.
+    //SignOut user.
     public void signOut(){
         mAuth.signOut();
     }
 
-    //Retorna un map de la informacion del usuario.
+    //Get map from user information.
     public Map<String,String> getUserInformation(FirebaseUser user){
 
         Map<String,String> info = new HashMap<>();
@@ -130,12 +149,12 @@ public class AuthFirebase extends DatabaseFirebase{
         return info;
     }
 
-    //Actualiza la instancia.
+    //Update instance FirebaseUser.
     private void updateUserInfo(){
         user = FirebaseAuth.getInstance().getCurrentUser();
     }
 
-    //Actualiza la informacion basica del usuario.
+    //Update name user.
     public void updateUserBasic(String newName){
         final String TAG = "updateUser";
         updateUserInfo();
@@ -154,7 +173,7 @@ public class AuthFirebase extends DatabaseFirebase{
                 });
     }
 
-    //Actualiza el email del usuario.
+    //Update email user.
     public void updateEmail(String newEmail){
         final String TAG = "updateEmail";
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -171,7 +190,7 @@ public class AuthFirebase extends DatabaseFirebase{
                 });
     }
 
-    //Actualiza la contraseña del usuario.
+    //Update password user.
     public void updatePassword(String newPassword){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         final String TAG = "Password update";
@@ -188,7 +207,7 @@ public class AuthFirebase extends DatabaseFirebase{
                 });
     }
 
-    //Envia un mensaje de verificacion.
+    //Send email verification.
     public void sendEmailVerification(){
         FirebaseAuth auth = FirebaseAuth.getInstance();
         FirebaseUser user = auth.getCurrentUser();
@@ -206,7 +225,7 @@ public class AuthFirebase extends DatabaseFirebase{
                 });
     }
 
-    //Envia un mensaje de restablecimiento contraseña.
+    //Send email refractor password.
     public void passwordRefractor(String emailAddress){
         FirebaseAuth auth = FirebaseAuth.getInstance();
         final String TAG = "Password Refractor";
@@ -227,7 +246,7 @@ public class AuthFirebase extends DatabaseFirebase{
         });
     }
 
-    //Elimina un usuario
+    //Remove user from auth server.
     public void deleteUser(){
         final String TAG = "Delete user "+getName();
         updateUserInfo();
@@ -256,6 +275,9 @@ public class AuthFirebase extends DatabaseFirebase{
     public String getEmail(){ updateUserInfo(); return user.getEmail();}
     public Uri getPhotoUrl(){ updateUserInfo(); return user.getPhotoUrl();}
     public String getUid(){ updateUserInfo(); return user.getUid();}
+    public String getUrlDatabase(){
+        return "Users/"+getUid();
+    }
     public FirebaseUser getUser(){
         return FirebaseAuth.getInstance().getCurrentUser();
     }
@@ -269,12 +291,83 @@ public class AuthFirebase extends DatabaseFirebase{
         }catch (Exception e){}
     }
 
+    //Setters
+    public void setUserFirebase(FirebaseUser user){
+        this.user = user;
+    }
+
     //Response login.
     private void updateUI(FirebaseUser user) {
         System.out.println("user: "+getName());
         System.out.println("email: "+getEmail());
         System.out.println("url: "+getPhotoUrl());
         System.out.println("uid: "+getUid());
+    }
+
+    //Methods utilitys
+    public void showProgressDialog(boolean show,String title,String msj){
+        if(progressDialog == null){
+            progressDialog = new ProgressDialog(this.context);
+        }
+        try {
+            if (!show)
+                progressDialog.dismiss();
+            else {
+                progressDialog.setTitle(title);
+                progressDialog.setMessage(msj);
+                progressDialog.setCancelable(true);
+                progressDialog.show();
+            }
+        }catch (Exception e){
+            System.out.println("Error showing progressDialog -> "+e.getMessage());
+        }
+    }
+    public void showProgressDialog(boolean show){
+        showProgressDialog(show,"","");
+    }
+    public void alertDialog(AlertDialog.Builder builder,String title, String hint, final DialogResponse dialogResponse) {
+
+        // Set up the input
+        final EditText input = new EditText(context);
+        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setHint(hint);
+        builder.setView(input);
+        builder.setTitle(title);
+
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                String m_Text = input.getText().toString();
+                dialogResponse.onSucess(m_Text);
+            }
+        });
+
+        builder.setCancelable(false);
+        builder.show();
+    }
+    public interface DialogResponse {
+        void onSucess(String value);
+    }
+    //Exceptions
+    public void toastException(Exception e){
+        String msj = "";
+        if(e instanceof FirebaseAuthUserCollisionException) {
+            msj = "Este correo electrónico ya se encuentra registrado";
+        }
+        else if(e instanceof FirebaseNetworkException){
+            msj = "No hay conexión a internet";
+        }
+        else if(e instanceof FirebaseAuthInvalidCredentialsException){
+            msj = "Verifique su contraseña";
+        }else if(e instanceof FirebaseAuthInvalidUserException){
+            msj = "El correo electrónico ingresado no existe";
+        }
+        else{
+            msj = "Ha ocurrido un error, intentelo nuevamente";
+            System.out.println("Exception -> "+e);
+        }
+        Toast.makeText(context, msj, Toast.LENGTH_SHORT).show();
     }
 
 }

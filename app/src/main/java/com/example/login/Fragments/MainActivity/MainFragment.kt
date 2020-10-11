@@ -4,16 +4,11 @@ import android.app.Activity
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentTransaction
 import com.example.login.Activities.MainActivity
 import com.example.login.Firebase.AuthFirebase
 import com.example.login.Firebase.DatabaseFirebase
@@ -53,7 +48,7 @@ class MainFragment : Fragment(), View.OnClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         authFirebase = AuthFirebase.getInstance(context)
-        urlDatabase = "Users/" + authFirebase.uid
+        urlDatabase = authFirebase.getUrlDatabase()
         assignVales()
         btn_logOut.setOnClickListener(this)
 
@@ -67,6 +62,10 @@ class MainFragment : Fragment(), View.OnClickListener {
         email_user.setText("Email: ${userFirebase.email}")
         name_user.setText("Nombre: ${userFirebase.displayName}")
         username_user.setText("Usuario: ")
+
+        //Create builder from dialog.
+        val builder = android.app.AlertDialog.Builder(context)
+
         Handler(Looper.getMainLooper()).postDelayed({
             DatabaseFirebase.getInstance(context).read(
                 urlDatabase,
@@ -75,16 +74,18 @@ class MainFragment : Fragment(), View.OnClickListener {
                     override fun onResponse(dataSnapshot: DataSnapshot) {
                         //OnSucess!
                         println(urlDatabase);
-                        val username:String = dataSnapshot.child("username").value.toString()
+                        val username: String = dataSnapshot.child("username").value.toString()
                         println("username: $username")
-                        if(username.equals("null") || username.isEmpty()){
-                            usernameAlert(object : DialogResponse {
-                                override fun onSucess(value: String?) {
-                                    authFirebase.write(urlDatabase+"/username", value)
-                                    username_user.setText("Usuario: $value")
-                                }
-                            })
-                        }else{
+                        if (username.equals("null") || username.isEmpty()) {
+                            authFirebase.alertDialog(builder,"", "Nombre de usuario",
+                                object : AuthFirebase.DialogResponse {
+
+                                    override fun onSucess(value: String?) {
+                                        authFirebase.write(urlDatabase + "/username", value)
+                                        username_user.setText("Usuario: $value")
+                                    }
+                                })
+                        } else {
                             username_user.setText("Usuario: $username")
                         }
                     }
@@ -100,49 +101,6 @@ class MainFragment : Fragment(), View.OnClickListener {
         }, 1500)
     }
 
-    fun usernameAlert(dialogResponse: DialogResponse) {
-        val builder = AlertDialog.Builder(
-            context!!
-        )
-        // Set up the input
-        val input = EditText(context)
-        // Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        input.inputType = InputType.TYPE_CLASS_TEXT
-        input.setHint("Nombre de usuario")
-        builder.setView(input)
-
-        // Set up the buttons
-        builder.setPositiveButton("OK") { dialog, which ->
-            val m_Text = input.text.toString()
-            dialogResponse.onSucess(m_Text)
-        }
-        builder.setCancelable(false)
-        builder.show()
-    }
-
-    interface DialogResponse {
-        fun onSucess(value: String?)
-    }
-
-
-    private fun callFragment(fragment: Fragment, fragmentback: Boolean = false){
-        val fragmentManager: FragmentManager = activity!!.supportFragmentManager
-        if(fragmentback){
-            fragmentManager
-                .beginTransaction()
-                .replace(R.id.frameLayout_login, fragment)
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .addToBackStack(null)
-                .commit()
-        }
-        else{
-            fragmentManager
-                .beginTransaction()
-                .replace(R.id.frameLayout_login, fragment)
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                .commit()
-        }
-    }
 
     //OnClick
     override fun onClick(v: View?) {

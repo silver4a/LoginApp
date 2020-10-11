@@ -29,25 +29,12 @@ import java.util.concurrent.Executor;
 
 public class AuthGoogle {
 
+    //Singleton
     public static AuthGoogle instance;
+    //Params
     private Context context;
     private GoogleSignInClient mGoogleSignInClient;
     private static final int RC_SIGN_IN = 897;
-    public String TAG = "GoogleSignIn";
-    private FirebaseAuth mAuth;
-
-    public AuthGoogle(Context context){
-        this.context = context;
-        mAuth = FirebaseAuth.getInstance();
-        // Configure Google Sign In
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestIdToken(context.getString(R.string.default_web_client_id))
-                .requestProfile()
-                .requestEmail()
-                .build();
-
-        mGoogleSignInClient = GoogleSignIn.getClient(context, gso);
-    }
 
     public static synchronized AuthGoogle getInstance(Context context){
         if(instance == null){
@@ -56,8 +43,27 @@ public class AuthGoogle {
         return instance;
     }
 
+    //Auth
+    private FirebaseAuth mAuth;
+
+    //Interface for response instance
     SignInresponse signInresponse;
 
+    public AuthGoogle(Context context){
+        this.context = context;
+        mAuth = FirebaseAuth.getInstance();
+        // Configure Google Sign In
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(context.getString(R.string.default_web_client_id))
+                .requestProfile()
+                .requestId()
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(context, gso);
+    }
+
+    //SignIn.
     public void signIn(SignInresponse signInresponse) {
         this.signInresponse = signInresponse;
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
@@ -65,10 +71,12 @@ public class AuthGoogle {
         activity.startActivityForResult(signInIntent, RC_SIGN_IN);
     }
 
+    //Interface response.
     public interface SignInresponse{
         void onSucess(FirebaseUser user);
     }
 
+    //ActivityForResut from LoginActivity.
     public void activityRespose(int requestCode, int resultCode, Intent data){
         // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
@@ -76,17 +84,20 @@ public class AuthGoogle {
             try {
                 GoogleSignInAccount account = task.getResult(ApiException.class);
 
+                //Google LogIn sucess!
                 firebaseAuthWithGoogle(account.getIdToken());
+
             } catch (ApiException e) {
                 // Google Sign In failed, update UI appropriately
                 Log.e("Error google Auth", e.getMessage());
                 Toast.makeText(context, "Fallo de incio de sesion", Toast.LENGTH_SHORT).show();
-                // ...
+                AuthFirebase.getInstance(context).showProgressDialog(false);
             }
         }
 
     }
 
+    //Sucess Google login.
     private void firebaseAuthWithGoogle(String idToken) {
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
         mAuth.signInWithCredential(credential)
@@ -96,7 +107,9 @@ public class AuthGoogle {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             Toast.makeText(context, "Success Google", Toast.LENGTH_SHORT).show();
+                            AuthFirebase.getInstance(context).showProgressDialog(false);
                             AuthFirebase.getInstance(context).user = mAuth.getCurrentUser();
+                            //Send reponse through interface to LoginActivity.
                             signInresponse.onSucess(mAuth.getCurrentUser());
                         } else {
                             // If sign in fails, display a message to the user.

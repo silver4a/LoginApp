@@ -69,9 +69,7 @@ class RegisterFragment : Fragment() {
 
                     //Map data
                     val mapUser = mapOf<String, String>(
-                        "names" to r_names.text.toString(),
-                        "lastnames" to r_lastnames.text.toString(),
-                        "email" to r_email.text.toString(),
+                        "names" to "${r_names.text.toString()} ${r_lastnames.text.toString()}",
                         "username" to r_usuario.text.toString()
                     )
                     authFirebase.register(
