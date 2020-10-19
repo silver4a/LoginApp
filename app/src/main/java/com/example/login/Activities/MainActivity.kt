@@ -8,6 +8,7 @@ import androidx.fragment.app.FragmentTransaction
 import com.example.login.Firebase.AuthFirebase
 import com.example.login.Fragments.MainActivity.MainFragment
 import com.example.login.R
+import java.lang.Exception
 
 class MainActivity : AppCompatActivity()  {
 
@@ -20,6 +21,7 @@ class MainActivity : AppCompatActivity()  {
         //getIntent().getSerializableExtra("userReference")
         mainFragment = MainFragment.newInstance(AuthFirebase.getInstance(this).user)
         callFragment(mainFragment)
+        relogin();
 
     }
 
@@ -29,6 +31,20 @@ class MainActivity : AppCompatActivity()  {
         finish()
     }
 
+
+    //Functions.
+
+    fun relogin(){
+        Thread(Runnable {
+            println("Relogeando. . . ");
+            AuthFirebase.getInstance(this).relogin(object : AuthFirebase.ReloginResponse{
+                override fun onFail(e: Exception?) {
+                    callLoginActivity()
+                    finish()
+                }
+            })
+        }).start()
+    }
 
     private fun callFragment(fragment: Fragment, fragmentback: Boolean = false){
         if(fragmentback){

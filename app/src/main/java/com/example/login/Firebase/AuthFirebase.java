@@ -1,5 +1,5 @@
-package com.example.login.Firebase;
 
+package com.example.login.Firebase;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
@@ -15,16 +15,21 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 
 import com.example.login.R;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseNetworkException;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.GoogleAuthProvider;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.squareup.picasso.Picasso;
 import java.util.HashMap;
@@ -86,7 +91,6 @@ public class AuthFirebase extends DatabaseFirebase{
 
     //LogIn user.
     public void signUp(String email, String password, final boolean verification, final OnSignUpResponse onSigUpResponse){
-        System.out.println("LOGIN!");
         mAuth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener((Activity) context, new OnCompleteListener<AuthResult>() {
                     @Override
@@ -122,10 +126,10 @@ public class AuthFirebase extends DatabaseFirebase{
     }
 
     //Check if user is signUp -> response trough a interface.
-    public void isSingUp(OnSignUpResponse onSigUpResponse){
+    public void isSingUp(OnSignUpResponse onSignUpResponse){
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
-            onSigUpResponse.onSucess(user);
+            onSignUpResponse.onSucess(user);
         }
     }
 
@@ -153,6 +157,7 @@ public class AuthFirebase extends DatabaseFirebase{
     private void updateUserInfo(){
         user = FirebaseAuth.getInstance().getCurrentUser();
     }
+
 
     //Update name user.
     public void updateUserBasic(String newName){
@@ -304,6 +309,52 @@ public class AuthFirebase extends DatabaseFirebase{
         System.out.println("uid: "+getUid());
     }
 
+    //Re-login
+    public void relogin(final ReloginResponse reloginResponse){
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String provider = "";
+        if (user.getProviderData().size() > 0) {
+            //Prints Out google.com for Google Sign In, prints facebook.com for Facebook
+             provider = user.getProviderData().get(user.getProviderData().size() - 1).getProviderId();
+            System.out.println("Provider: -> "+provider);
+            AuthCredential credential = null;
+            if(provider.contains("password")) {
+                credential = EmailAuthProvider
+                        .getCredential("jananava44@gmail.com", "123456");
+            }else{
+                return;
+            }
+            user.reauthenticate(credential).addOnSuccessListener(new OnSuccessListener<Void>() {
+                @Override
+                public void onSuccess(Void aVoid) {
+                    System.out.println("Usuario re-autenticado");
+                }
+            }).addOnFailureListener(new OnFailureListener() {
+                @Override
+                public void onFailure(@NonNull Exception e) {
+                    if(e instanceof FirebaseNetworkException) {
+                        Toast.makeText(context, "Problemas de red", Toast.LENGTH_SHORT).show();
+                        System.out.println("Problemas de red");
+                    }
+                    else {
+                        System.out.println("Error al reautenticar -> " + e);
+                        toastException(e);
+                        signOut();
+                        reloginResponse.onFail(e);
+                    }
+                }
+            });
+        }
+        //        System.out.println("prov -> "+user.);
+        // Get auth credentials from the user for re-authentication. The example below shows
+        // email and password credentials but there are multiple possible providers,
+        // such as GoogleAuthProvider or FacebookAuthProvider.
+
+        // Prompt the user to re-provide their sign-in credentials
+    }
+    public interface ReloginResponse{
+        void onFail(Exception e);
+    }
     //Methods utilitys
     public void showProgressDialog(boolean show,String title,String msj){
         if(progressDialog == null){
@@ -361,7 +412,10 @@ public class AuthFirebase extends DatabaseFirebase{
         else if(e instanceof FirebaseAuthInvalidCredentialsException){
             msj = "Verifique su contraseña";
         }else if(e instanceof FirebaseAuthInvalidUserException){
-            msj = "El correo electrónico ingresado no existe";
+            if(((FirebaseAuthInvalidUserException) e).getErrorCode().equals("ERROR_USER_DISABLED"))
+                msj = "La cuenta ha sido deshabilitada";
+            else
+                msj = "El correo electrónico ingresado no existe";
         }
         else{
             msj = "Ha ocurrido un error, intentelo nuevamente";

@@ -65,6 +65,7 @@ class LoginFragment : Fragment(),View.OnClickListener {
             R.id.register -> {
                 //Call fragment register
                 (getActivity() as LoginActivity?)?.callFragment(registerFragment,true)
+                //Toast!
             }
             R.id.btn_login ->{
 

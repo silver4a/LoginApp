@@ -3,6 +3,7 @@ package com.example.login.Activities
 import android.app.ProgressDialog
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -14,6 +15,7 @@ import com.example.login.Fragments.LoginActivity.LoginFragment
 import com.example.login.Fragments.MainActivity.MainFragment
 import com.example.login.R
 import com.google.firebase.auth.FirebaseUser
+import java.lang.Exception
 import java.util.*
 
 
@@ -62,7 +64,6 @@ class LoginActivity : AppCompatActivity() {
     }
 
     //Functions of utillity.
-
     fun callMainActivity(){
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)

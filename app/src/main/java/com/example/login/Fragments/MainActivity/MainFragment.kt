@@ -17,6 +17,7 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import kotlinx.android.synthetic.main.main_layout.*
+import java.lang.Exception
 
 
 lateinit var userFirebase: FirebaseUser
@@ -91,11 +92,15 @@ class MainFragment : Fragment(), View.OnClickListener {
                     }
 
                     override fun onFail(databaseError: DatabaseError?) {
-                        Toast.makeText(
-                            context,
-                            "Ocurrió un error al recuperar los datos",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        try {
+                            Toast.makeText(
+                                context,
+                                "Ocurrió un error al recuperar los datos",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }catch (e:Exception){
+                            println("Error de recuperacion de datos -> "+e);
+                        }
                     }
                 })
         }, 1500)
